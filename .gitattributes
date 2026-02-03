@@ -1,0 +1,27 @@
+# Treat all text files as UTF-8 and normalize line endings
+* text=auto eol=lf
+
+# Explicitly define handling for specific file types
+*.js   text
+*.vue  text
+*.html text
+*.css  text
+*.json text
+*.md   text
+*.py   text
+
+# Binary files
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.svg  text
+
+# Ensure shell scripts retain Unix-style line endings
+*.sh eol=lf
+
+# Lock files
+package-lock.json -merge
+pnpm-lock.yaml -merge
+yarn.lock -merge
