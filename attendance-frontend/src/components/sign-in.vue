@@ -1,134 +1,157 @@
+```vue
 <template>
-     
- 
-      <form @submit.prevent = "signIn">
-          <div v-if = "selectedRole === 'student'">
-            <input v-model = credentials.collageID placeholder="Collage ID">
-            <input type = "password" v-model = credentials.password placeholder="Student password">
-          </div>
+  <div class="wrapper">
 
-          <div v-if = "selectedRole === 'admin'">
-            <input v-model = adminCredentials.adminID placeholder="Admin ID">
-            <input type = "password" v-model = adminCredentials.password placeholder="Admin password">
-          </div>
+    <!-- LOGIN CARD -->
+    <form class="login-form" @submit.prevent="signIn">
 
-          <select v-model = "selectedRole">
-            <option value="student">Student</option>
-            <option value="admin">Admin</option>
-          </select>
-          <button type = "submit">Sign in</button>
-         <!-- <p v-if = "selectedRole === 'admin'">No account? <a @click="$router.push('/register')">Register here</a></p> -->
-          <p v-if = "selectedRole === 'student'">No account then contact to Admin</p>
-      </form>
+      <h1 class="academy">IPS Academy</h1>
+      <h2>Welcome Back</h2>
+
+      <input v-model="credentials.collageID" placeholder="College ID" />
+
+      <input
+        type="password"
+        v-model="credentials.password"
+        placeholder="Password"
+      />
+
+      <select v-model="selectedRole">
+        <option value="student">Student</option>
+        <option value="admin">Admin</option>
+      </select>
+
+      <button type="submit">Sign in</button>
+
+      <p>No account? Contact Admin</p>
+
+    </form>
+
+  </div>
 </template>
 
 <script>
-    import { checkDetails , checkAdminDetails} from '@/services/api';
-    export default{
+import axios from "axios";
 
-        data(){
-            return{ 
-                selectedRole : "student",
-                credentials:{collageID: "",password: ""},
-                adminCredentials:{adminID : "", password : ""}
-            }
-        },
-        methods:{
-             async signIn(){
-                try{
-                    if(this.selectedRole === "student"){
-                        console.log("Sending:", this.credentials);
-                        const response = await checkDetails(this.credentials);
-                        const student = response.student;
-                        localStorage.setItem("student", JSON.stringify(student));
-                        this.$router.push("/dashboard")
-                    }
-                    else{
-                        const response = await checkAdminDetails(this.adminCredentials);
-                       // localStorage.setItem("admin", JSON.stringify(student));
-                        this.$router.push("/admin");
-                    }
-                    
-                }
-                catch(error){
-                       console.log(error.message);
-                       alert(error.response?.data?.message || "Sign-in failed");
-                }
-             }
-        }
-    }
+export default {
+  data() {
+    return {
+      selectedRole: "student",
+      credentials: {
+        collageID: "",
+        password: "",
+      },
+    };
+  },
+  methods: {
+    async signIn() {
+      try {
+        const res = await axios.post(
+          "http://localhost:3000/student/signin",
+          this.credentials
+        );
+
+        localStorage.setItem("student", JSON.stringify(res.data.student));
+        this.$router.push("/student");
+      } catch (err) {
+        alert("Login failed");
+      }
+    },
+  },
+};
 </script>
 
 <style scoped>
-  h1{
-      text-align: center;
-      color: black;
-  }
-  form {
-  max-width: 400px;
-  margin: 50px auto;
-  padding: 30px 25px;
-  background-color: #f8f9fa;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+:global(body){
+  margin:0;
 }
 
+/* BACKGROUND IMAGE */
+.wrapper {
+  position: relative;
+  height: 100vh;
+  background: url("@/assets/login-bg.png") center/cover no-repeat;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* DARK OVERLAY */
+.wrapper::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(
+    135deg,
+    rgba(15,25,50,0.7),
+    rgba(70,25,90,0.55)
+  );
+}
+
+/* GLASS LOGIN CARD */
+.login-form {
+  position: relative;
+  width: 380px;
+  padding: 40px 36px;
+
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 28px;
+
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.15),
+    0 40px 80px rgba(0,0,0,0.55);
+
+  z-index: 2;
+  text-align: center;
+}
+
+/* IPS HEADING */
+.academy{
+  color:white;
+  font-size:32px;
+  margin-bottom:8px;
+  text-shadow:0 10px 40px rgba(0,0,0,0.7);
+}
+
+h2 {
+  color:white;
+  margin-bottom:22px;
+}
+
+/* INPUT STYLE */
 input,
 select {
   width: 100%;
-  padding: 12px 14px;
-  margin: 10px 0;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  box-sizing: border-box;
-  transition: border-color 0.3s ease;
+  padding: 14px;
+  margin-bottom: 14px;
+  border-radius: 12px;
+  border: none;
+  outline:none;
+  background: rgba(255,255,255,0.85);
 }
 
-input:focus,
-select:focus {
-  border-color: #007bff;
-  outline: none;
-}
-
-select {
-  background-color: #fff;
-}
-
+/* BUTTON */
 button {
   width: 100%;
-  padding: 12px;
-  background-color: #007bff;
-  color: white;
-  font-size: 1rem;
-  font-weight: bold;
+  padding: 14px;
   border: none;
-  border-radius: 8px;
-  margin-top: 15px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.3s ease;
 }
 
-button:hover {
-  background-color: #0056b3;
-}
-
-/* Message links */
 p {
   margin-top: 15px;
   text-align: center;
-  font-size: 0.95rem;
-  color: #555;
-}
-
-a {
-  text-decoration: underline;
-  color: #007bff;
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-a:hover {
-  color: #dc3545;
+  font-size: 0.85rem;
+  color:white;
 }
 </style>
+```
