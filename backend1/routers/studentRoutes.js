@@ -3,29 +3,22 @@ const router = express.Router();
 const multer = require("multer");
 
 const {
-addStudent,
-getAllStudents,
-getSemesterAttendance
-} = require("../controllers/studentControllers");
+  addStudent,
+  getAllStudents
+} = require("../controllers/studentControllers"); // ✅ fixed
 
-// MULTER
-const storage = multer.memoryStorage();
+// multer setup
+const storage = multer.diskStorage({
+  destination: "uploads/",
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + ".jpg");
+  }
+});
+
 const upload = multer({ storage });
 
-// ADD STUDENT
-router.post("/student/add", upload.single("image"), addStudent);
-
-// GET ALL
-router.get("/students", getAllStudents);
-
-// STUDENT LOGIN (dummy)
-router.post("/student/signin", (req, res) => {
-return res.status(200).json({
-message: "Student login working"
-});
-});
-
-// SEMESTER ATTENDANCE
-router.post("/student/semester-attendance", getSemesterAttendance);
+// ✅ correct routes
+router.post("/add", upload.single("image"), addStudent);
+router.get("/", getAllStudents);
 
 module.exports = router;

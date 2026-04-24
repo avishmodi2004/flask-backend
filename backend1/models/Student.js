@@ -6,29 +6,26 @@ const StudentSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
-
   name: {
     type: String,
     required: true,
   },
-
   password: {
     type: String,
     required: true,
   },
-
   semester: {
     type: Number,
     required: true,
   },
-
   daysPresent: {
     type: Number,
     default: 0,
   },
 
-  studentImage: {
-    type: Buffer,
+  // 🔥 FIX (buffer hatao, string karo)
+  image: {
+    type: String,
     required: true,
   },
 

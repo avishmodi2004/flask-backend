@@ -23,7 +23,7 @@ return response.data;
 
 // ================= FETCH ALL STUDENTS =================
 export const fetchAllStudents = async () => {
-const response = await axios.get(`${API_URL}/students`);
+const response = await axios.get(`${API_URL}/student`);
 return response.data;
 };
 

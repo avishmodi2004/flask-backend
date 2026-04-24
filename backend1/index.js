@@ -19,8 +19,9 @@ app.use(cors({
 }));
 
 // ================= ROUTES =================
-app.use("/api", studentRoutes);
-app.use("/api", adminRoutes);
+// ✅ FIXED ROUTES
+app.use("/api/student", studentRoutes);
+app.use("/api/admin", adminRoutes);
 
 // ================= CREATE ADMIN (ONLY ONCE) =================
 const createPermanentAdmin = async () => {
