@@ -1,11 +1,21 @@
 const mongoose = require("mongoose");
 
 const studentAttendanceSchema = new mongoose.Schema({
-    date : {type : Date, required : true , unique : true},
-    students:[
-        {type : String}
-    ]
+  date: {
+    type: String,   // string rakhna better hai (YYYY-MM-DD)
+    required: true,
+  },
 
+  semester: {
+    type: Number,
+    required: true,
+  },
+
+  students: [
+    {
+      type: String,
+    },
+  ],
 });
 
-module.exports =  mongoose.model("studentAttendance",studentAttendanceSchema);
+module.exports = mongoose.model("studentAttendance", studentAttendanceSchema);

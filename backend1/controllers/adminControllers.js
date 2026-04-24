@@ -1,43 +1,62 @@
 const Admin = require("../models/Admin");
-const Attendance = require("../models/studentAttendance");
 
-// Manual admin registration disabled
-const addAdmin = async (req,res) =>{
-    return res.status(403).json({ message: "Manual admin registration is disabled." });
-}
+// ✅ ADD ADMIN
+const addAdmin = async (req, res) => {
+  try {
+    const { adminID, password } = req.body;
 
-// Admin sign-in
-const adminSignin = async(req,res) =>{
-    console.log(req.body);
-    try{
-        const admin = await Admin.findOne({adminID : req.body.adminID});
-        if(!admin){
-            return res.status(404).json({message : "Admin not found"});
-        }
-        if(admin.password !== req.body.password)
-            return res.status(401).json({message : "Invalid password"});
-        
-        return res.status(200).json({message : "Sign-in success"});
+    const existing = await Admin.findOne({ adminID });
+    if (existing) {
+      return res.status(400).json({ message: "Admin already exists" });
     }
-    catch(err){
-        console.log(err);
-        return res.status(502).json({message : "Error"});
-    }
-}
 
-// Initialize class
-const initializeClass = async(req,res) =>{
-    try{
-        const att = new Attendance();
-        att.date = new Date().toISOString().split('T')[0];
-        att.students = [];
-        await att.save();
-        return res.status(201).json({message : "Class established successfully"});
-    }
-    catch(err){
-        console.log(err);
-        return res.status(500).json({ message: "Error initializing class" });
-    }
-}
+    const admin = new Admin({ adminID, password });
+    await admin.save();
 
-module.exports = { addAdmin, initializeClass, adminSignin };
+    res.status(201).json({ message: "Admin created", admin });
+  } catch (err) {
+    res.status(500).json({ message: "Error creating admin" });
+  }
+};
+
+// ✅ INIT CLASS (dummy for now)
+const initializeClass = async (req, res) => {
+  try {
+    res.json({ message: "Class initialized" });
+  } catch (err) {
+    res.status(500).json({ message: "Error initializing class" });
+  }
+};
+
+// ✅ ADMIN LOGIN
+const adminSignin = async (req, res) => {
+  try {
+    const { adminID, password } = req.body;
+
+    const admin = await Admin.findOne({ adminID });
+
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    if (admin.password !== password) {
+      return res.status(401).json({ message: "Wrong password" });
+    }
+
+    return res.json({
+      message: "Login success",
+      admin
+    });
+
+  } catch (err) {
+    console.log("🔥 ERROR:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ✅ EXPORT ALL (IMPORTANT)
+module.exports = {
+  addAdmin,
+  initializeClass,
+  adminSignin
+};

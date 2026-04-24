@@ -1,27 +1,37 @@
-```vue
 <template>
   <div class="wrapper">
 
-    <!-- LOGIN CARD -->
     <form class="login-form" @submit.prevent="signIn">
 
       <h1 class="academy">IPS Academy</h1>
       <h2>Welcome Back</h2>
 
-      <input v-model="credentials.collageID" placeholder="College ID" />
-
       <input
-        type="password"
-        v-model="credentials.password"
-        placeholder="Password"
+        v-model="credentials.id"
+        :placeholder="selectedRole === 'admin' ? 'Admin ID' : 'College ID'"
+        required
       />
+
+      <div class="password-box">
+        <input
+          :type="showPassword ? 'text' : 'password'"
+          v-model="credentials.password"
+          placeholder="Password"
+          required
+        />
+        <span class="toggle" @click="showPassword = !showPassword">
+          {{ showPassword ? "Hide" : "Show" }}
+        </span>
+      </div>
 
       <select v-model="selectedRole">
         <option value="student">Student</option>
         <option value="admin">Admin</option>
       </select>
 
-      <button type="submit">Sign in</button>
+      <button type="submit" :disabled="loading">
+        {{ loading ? "Signing in..." : "Sign in" }}
+      </button>
 
       <p>No account? Contact Admin</p>
 
@@ -37,24 +47,56 @@ export default {
   data() {
     return {
       selectedRole: "student",
+      showPassword: false,
+      loading: false,
       credentials: {
-        collageID: "",
+        id: "",
         password: "",
       },
     };
   },
+
   methods: {
     async signIn() {
-      try {
-        const res = await axios.post(
-          "http://localhost:3000/student/signin",
-          this.credentials
-        );
+      this.loading = true;
 
-        localStorage.setItem("student", JSON.stringify(res.data.student));
-        this.$router.push("/student");
+      try {
+        let res;
+
+        if (this.selectedRole === "student") {
+
+          // ✅ STUDENT LOGIN
+          res = await axios.post(
+            "http://localhost:5000/api/student/signin",
+            {
+              collageID: this.credentials.id,
+              password: this.credentials.password,
+            }
+          );
+
+          localStorage.setItem("student", JSON.stringify(res.data.student));
+          this.$router.push("/dashboard");
+
+        } else {
+
+          // ✅ 🔥 FINAL ADMIN LOGIN (CORRECT URL)
+          res = await axios.post(
+            "http://localhost:5000/api/adminSignin",
+            {
+              adminID: this.credentials.id,
+              password: this.credentials.password,
+            }
+          );
+
+          localStorage.setItem("admin", JSON.stringify(res.data));
+          this.$router.push("/admin");
+        }
+
       } catch (err) {
-        alert("Login failed");
+        console.error(err);
+        alert(err.response?.data?.message || "Login failed ❌");
+      } finally {
+        this.loading = false;
       }
     },
   },
@@ -64,20 +106,18 @@ export default {
 <style scoped>
 :global(body){
   margin:0;
+  font-family: Arial, sans-serif;
 }
 
-/* BACKGROUND IMAGE */
 .wrapper {
   position: relative;
   height: 100vh;
   background: url("@/assets/login-bg.png") center/cover no-repeat;
-
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* DARK OVERLAY */
 .wrapper::before{
   content:"";
   position:absolute;
@@ -89,28 +129,21 @@ export default {
   );
 }
 
-/* GLASS LOGIN CARD */
 .login-form {
   position: relative;
   width: 380px;
   padding: 40px 36px;
-
   background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-
   border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 28px;
-
   box-shadow:
     0 0 0 1px rgba(255,255,255,0.15),
     0 40px 80px rgba(0,0,0,0.55);
-
   z-index: 2;
   text-align: center;
 }
 
-/* IPS HEADING */
 .academy{
   color:white;
   font-size:32px;
@@ -123,7 +156,6 @@ h2 {
   margin-bottom:22px;
 }
 
-/* INPUT STYLE */
 input,
 select {
   width: 100%;
@@ -132,10 +164,24 @@ select {
   border-radius: 12px;
   border: none;
   outline:none;
-  background: rgba(255,255,255,0.85);
+  background: rgba(255,255,255,0.9);
+  font-size: 14px;
 }
 
-/* BUTTON */
+.password-box {
+  position: relative;
+}
+
+.toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 12px;
+  color: #333;
+}
+
 button {
   width: 100%;
   padding: 14px;
@@ -145,13 +191,21 @@ button {
   color: white;
   font-weight: bold;
   cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  transform: scale(1.03);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 p {
   margin-top: 15px;
-  text-align: center;
   font-size: 0.85rem;
   color:white;
 }
 </style>
-```
