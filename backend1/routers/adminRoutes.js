@@ -2,16 +2,18 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  addAdmin,
-  initializeClass,
-  adminSignin
+  adminSignin,
+  startClass,
+  getClassStatus
 } = require("../controllers/adminControllers");
 
-// ✅ FIXED ROUTES
-router.post("/addadmin", addAdmin);
-router.get("/initclass", initializeClass);
+// ✅ ADMIN LOGIN
+router.post("/signin", adminSignin);
 
-// 🔥 IMPORTANT FIX (same as frontend)
-router.post("/adminSignin", adminSignin);
+// 🔥 START CLASS (VERY IMPORTANT)
+router.post("/init", startClass);
+
+// 🔥 CHECK STATUS
+router.get("/status", getClassStatus);
 
 module.exports = router;

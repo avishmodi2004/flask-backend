@@ -75,20 +75,22 @@ export default {
           );
 
           localStorage.setItem("student", JSON.stringify(res.data.student));
+          alert("Student Login Success ✅");
           this.$router.push("/dashboard");
 
         } else {
 
-          // ✅ 🔥 FINAL ADMIN LOGIN (CORRECT URL)
+          // ✅ ADMIN LOGIN (🔥 FIXED)
           res = await axios.post(
-            "http://localhost:5000/api/adminSignin",
+            "http://localhost:5000/api/admin/signin",
             {
               adminID: this.credentials.id,
               password: this.credentials.password,
             }
           );
 
-          localStorage.setItem("admin", JSON.stringify(res.data));
+          localStorage.setItem("admin", JSON.stringify(res.data.admin));
+          alert("Admin Login Success ✅");
           this.$router.push("/admin");
         }
 
@@ -148,7 +150,6 @@ export default {
   color:white;
   font-size:32px;
   margin-bottom:8px;
-  text-shadow:0 10px 40px rgba(0,0,0,0.7);
 }
 
 h2 {
@@ -191,7 +192,6 @@ button {
   color: white;
   font-weight: bold;
   cursor: pointer;
-  transition: 0.3s;
 }
 
 button:hover {
