@@ -4,7 +4,7 @@
     <form class="login-form" @submit.prevent="signIn">
 
       <h1 class="academy">IPS Academy</h1>
-      <h2>Welcome Back</h2>
+      <h2>School of Computer </h2>
 
       <input
         v-model="credentials.id"
@@ -67,7 +67,7 @@ export default {
 
           // ✅ STUDENT LOGIN
           res = await axios.post(
-            "http://localhost:5000/api/student/signin",
+            "http://localhost:4000/api/student/signin",
             {
               collageID: this.credentials.id,
               password: this.credentials.password,
@@ -82,7 +82,7 @@ export default {
 
           // ✅ ADMIN LOGIN (🔥 FIXED)
           res = await axios.post(
-            "http://localhost:5000/api/admin/signin",
+            "http://localhost:4000/api/admin/signin",
             {
               adminID: this.credentials.id,
               password: this.credentials.password,
@@ -114,7 +114,7 @@ export default {
 .wrapper {
   position: relative;
   height: 100vh;
-  background: url("@/assets/login-bg.png") center/cover no-repeat;
+  background: url("@/assets/login-bg.jpeg") center/cover no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;

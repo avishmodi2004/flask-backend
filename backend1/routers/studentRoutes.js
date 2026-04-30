@@ -11,25 +11,15 @@ const {
   semesterAttendance
 } = require("../controllers/studentControllers");
 
-// 🔥 FIXED multer (absolute path)
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, "../uploads"));
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({ storage });
-
+const memoryStorage = multer.memoryStorage();
+const uploadOnMemory = multer({storage : memoryStorage});
 // ROUTES
-router.post("/add", upload.single("image"), addStudent);
+router.post("/add", uploadOnMemory.single("image"), addStudent);
 router.get("/", getAllStudents);
 router.post("/signin", studentSignin);
 
 // 🔥 IMPORTANT
-router.post("/mark-attendance", upload.single("image"), markAttendance);
+router.post("/mark-attendance", uploadOnMemory.single("image"), markAttendance);
 
 router.post("/semester-attendance", semesterAttendance);
 

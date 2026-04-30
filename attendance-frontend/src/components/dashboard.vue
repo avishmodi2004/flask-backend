@@ -84,20 +84,11 @@ export default {
       try {
         const formData = new FormData();
 
-        // 🔥 STRONG FILE CONVERSION
-        const file = new File(
-          [this.imageBlob],
-          "photo.jpg",
-          { type: this.imageBlob.type || "image/jpeg" }
-        );
-
-        console.log("📤 Sending file:", file);
-
         formData.append("collageID", this.student.collageID);
-        formData.append("image", file);
-
+        formData.append("image", this.imageBlob);
+        console.log(this.imageBlob);
         await axios.post(
-          "http://localhost:5000/api/student/mark-attendance",
+          "http://localhost:4000/api/student/mark-attendance",
           formData,
           {
             headers: {
@@ -119,7 +110,7 @@ export default {
     async fetchAttendance() {
       try {
         const res = await axios.post(
-          "http://localhost:5000/api/student/semester-attendance",
+          "http://localhost:4000/api/student/semester-attendance",
           {
             collageID: this.student.collageID,
             semester: this.selectedSemester
