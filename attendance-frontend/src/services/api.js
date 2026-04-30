@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "http://localhost:4000/api";
 
 // ================= ADD STUDENT =================
 export const addStudent = async (studentData) => {
@@ -14,7 +14,12 @@ export const addStudent = async (studentData) => {
 
   const response = await axios.post(
     `${API_URL}/student/add`,
-    formData
+    formData,
+    {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+    }
   );
 
   return response.data;

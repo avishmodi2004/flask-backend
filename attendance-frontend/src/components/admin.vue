@@ -106,9 +106,7 @@ export default {
   methods: {
 
     handleBlob(blob) {
-      this.student.studentImage = new File([blob], "photo.jpg", {
-        type: "image/jpeg"
-      });
+      this.student.studentImage = blob;
     },
 
     async getRecords() {

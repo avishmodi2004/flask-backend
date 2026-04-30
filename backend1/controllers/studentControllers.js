@@ -1,20 +1,32 @@
 const Student = require("../models/Student");
-
+const fs = require("fs");
+const path = require("path");
+const axios = require("axios");
 // ================= ADD STUDENT =================
 const addStudent = async (req, res) => {
   try {
+    console.log(req.body);
     const { collageID, name, password, semester } = req.body;
-
+    
     if (!req.file) {
       return res.status(400).json({ message: "Image required ❌" });
     }
+    
+    const uploadDir = path.join(__dirname, "../uploads");
 
+    // create folder if not exists
+     if (!fs.existsSync(uploadDir)) {
+         fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const filePath = path.join(uploadDir, `${collageID}.jpg`);
+    fs.writeFileSync(filePath, req.file.buffer);
     const student = new Student({
       collageID,
       name,
       password,
       semester,
-      image: req.file.filename,
+      image: filePath,
       daysPresent: 0,
       totalClasses: 0
     });
@@ -23,7 +35,6 @@ const addStudent = async (req, res) => {
 
     res.status(201).json({
       message: "Student added successfully ✅",
-      student
     });
 
   } catch (err) {
@@ -91,17 +102,34 @@ const markAttendance = async (req, res) => {
     if (!student) {
       return res.status(404).json({ message: "Student not found ❌" });
     }
+    
+    
+    const recievedImage = req.file.buffer;
+    const storedImage = fs.readFileSync(student.image);
 
-    student.image = req.file.filename;
+    if(!storedImage){
+       return res.status(404).json({ message: "image not found ❌" });
+    }
 
-    student.daysPresent = Number(student.daysPresent || 0) + 1;
-    student.totalClasses = Number(student.totalClasses || 0) + 1;
-
-    await student.save();
-
-    return res.status(200).json({
-      message: "Attendance marked ✅"
+    const faceResponse = await axios.post("http://localhost:5000/face-compare", {image1 : recievedImage.toString("base64"),
+      image2 : storedImage.toString("base64")
     });
+    
+    
+    if(faceResponse.data.result === "success"){
+        student.daysPresent = Number(student.daysPresent || 0) + 1;
+        student.totalClasses = Number(student.totalClasses || 0) + 1;
+
+        await student.save();
+
+        return res.status(200).json({
+           message: "Attendance marked ✅"
+        });
+    }
+    else{
+      return res.status(404).json({message : "face does not match"});
+    }
+    
 
   } catch (err) {
     console.log("🔥 FULL ERROR:", err);
