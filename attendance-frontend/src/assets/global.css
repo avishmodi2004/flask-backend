@@ -1,0 +1,98 @@
+/* 1. Universal Reset: Sabse pehle browser ke faltu gaps hatane ke liye */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 2. Full Screen Height & Width Fix */
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #020617; /* Dark theme base color */
+  overflow-x: hidden; /* Horizontal scroll ko rokne ke liye */
+}
+
+/* 3. Global Button Styles */
+button {
+  padding: 8px 16px;
+  border: none;
+  background-color: #3b82f6;
+  color: white;
+  cursor: pointer;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  background-color: #1e293b;
+  color: #475569;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 4. Global Input Styles */
+input, select {
+  padding: 10px 12px;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  background-color: #0f172a;
+  color: white;
+  outline: none;
+  font-size: 14px;
+}
+
+input:focus, select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* 5. Modern Table Styles (For Admin Dashboards) */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 15px;
+  background-color: rgba(30, 41, 59, 0.5);
+  backdrop-filter: blur(10px);
+  color: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+th, td {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 15px;
+  text-align: center;
+}
+
+th {
+  background-color: rgba(15, 23, 42, 0.8);
+  color: #94a3b8;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+tr:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* 6. Utility Classes */
+.text-center { text-align: center; }
+.mt-10 { margin-top: 10px; }
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
