@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
-
+const Attendance = require("../models/Attendance");
+const Student = require("../models/Student");
 const Subject = require("../models/Subject");
 
 // All subjects
@@ -33,14 +34,32 @@ router.get("/teacher/:id", async (req, res) => {
   }
 });
 
+
+// Subjects by semester
+router.get("/semester/:semester", async (req, res) => {
+  try {
+    const subjects = await Subject.find({
+      semester: Number(req.params.semester),
+    }).sort({ name: 1 });
+
+    res.json(subjects);
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+});
+
 // Add subject without teacher
 router.post("/", async (req, res) => {
   try {
-    const { name, code, semester } = req.body;
+    const { name, code, semester, teacherID } = req.body;
 
     if (!name || !code || !semester) {
       return res.status(400).json({
-        message: "Subject name, code aur semester required hai"
+        success: false,
+        message: "Subject name, code, and semester are required"
       });
     }
 
@@ -48,42 +67,26 @@ router.post("/", async (req, res) => {
       name,
       code,
       semester: Number(semester),
-      teacherID: null
+      teacherID: teacherID || null
     });
 
     await subject.save();
 
     res.json({
       success: true,
-      message: "Subject add ho gaya ✅",
+      message: "Subject added successfully",
       subject
     });
 
   } catch (err) {
     res.status(500).json({
+      success: false,
       message: err.message
     });
   }
 });
-
 // Delete subject
 router.delete("/:id", async (req, res) => {
-  try {
-    await Subject.findByIdAndDelete(req.params.id);
-
-    res.json({
-      success: true,
-      message: "Subject deleted ✅"
-    });
-
-  } catch (err) {
-    res.status(500).json({
-      message: err.message
-    });
-  }
-});
-// ================= GET SUBJECT BY ID =================
-router.get("/:id", async (req, res) => {
   try {
     const subject = await Subject.findById(req.params.id);
 
@@ -94,7 +97,33 @@ router.get("/:id", async (req, res) => {
       });
     }
 
-    res.json(subject);
+    await Attendance.deleteMany({ subject: subject.code });
+
+    const students = await Student.find();
+
+    for (const student of students) {
+      if (
+        student.subjectAttendance &&
+        student.subjectAttendance.has(subject.code)
+      ) {
+        const count = student.subjectAttendance.get(subject.code) || 0;
+
+        student.daysPresent = Math.max(
+          0,
+          Number(student.daysPresent || 0) - Number(count)
+        );
+
+        student.subjectAttendance.delete(subject.code);
+        await student.save();
+      }
+    }
+
+    await Subject.findByIdAndDelete(req.params.id);
+
+    res.json({
+      success: true,
+      message: "Subject and related attendance deleted successfully"
+    });
 
   } catch (err) {
     res.status(500).json({

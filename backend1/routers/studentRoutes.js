@@ -6,6 +6,7 @@ const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
 const ClassTeacher = require("../models/ClassTeacher");
+const Attendance = require("../models/Attendance");
 
 // ✅ Ensure image upload folder exists
 const uploadDir = "uploads/students/";
@@ -33,7 +34,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ================= DELETE STUDENT =================
+
 // ================= DELETE STUDENT BY CLASS TEACHER =================
 router.delete("/class-teacher-delete/:id", async (req, res) => {
   try {
@@ -232,107 +233,163 @@ router.post("/add", upload.single("image"), async (req, res) => {
   }
 });
 
-// ================= ATTENDANCE ROUTE =================
-router.post("/mark-attendance", async (req, res) => {
+
+// ================= ATTENDANCE ROUTE WITH SINGLE RANDOM CHALLENGE =================
+router.post("/verify-challenge", async (req, res) => {
   try {
+    const { image1, challenge } = req.body;
 
-    const {
-      collageID,
-      image1,
-      subjectCode
-    } = req.body;
-
-    if (!collageID || !subjectCode) {
+    if (!image1 || !challenge) {
       return res.status(400).json({
         success: false,
-        message: "ID ya Subject Code missing hai! ❌"
+        message:  "Photo or challenge is missing"
+      });
+    }
+
+    const cleanLiveImage = image1.replace(/^data:image\/\w+;base64,/, "");
+
+    const pythonRes = await axios.post(
+      "http://127.0.0.1:5000/verify-pose",
+      {
+        image: cleanLiveImage,
+        challenge
+      },
+      {
+        timeout: 15000
+      }
+    );
+
+    if (pythonRes.data.result !== "success") {
+      return res.status(400).json({
+        success: false,
+        message: pythonRes.data.message || "Challenge failed ❌"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Challenge passed ✅"
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Challenge verify server error",
+      debug: err.message
+    });
+  }
+}); 
+
+
+router.post("/mark-attendance", async (req, res) => {
+  try {
+    const { collageID, image1, subjectCode, challenge } = req.body;
+
+    if (!collageID || !subjectCode || !image1 || !challenge) {
+      return res.status(400).json({
+        success: false,
+        message: "ID, photo, subject, or challenge is missing",
       });
     }
 
     const student = await Student.findOne({
-      collageID: collageID.toString()
+      collageID: collageID.toString(),
     });
 
     if (!student || !student.image) {
       return res.status(404).json({
         success: false,
-        message: "Student record ya photo nahi mili! ❌"
+        message: "Student record or photo not found",
       });
     }
 
-    const originalImagePath =
-      path.join(__dirname, "../", student.image);
+    const today = new Date().toISOString().split("T")[0];
+
+    const alreadyMarked = await Attendance.findOne({
+      collageID: student.collageID,
+      subject: subjectCode,
+      date: today,
+    });
+
+    if (alreadyMarked) {
+      return res.status(400).json({
+        success: false,
+        message: "Attendance already marked for this class",
+      });
+    }
+
+    const originalImagePath = path.join(__dirname, "../", student.image);
 
     if (!fs.existsSync(originalImagePath)) {
       return res.status(404).json({
         success: false,
-        message: "Original photo disk par nahi mili! ❌"
+        message: "Original photo not found on disk",
       });
     }
 
-    const originalImageBase64 =
-      fs.readFileSync(originalImagePath, {
-        encoding: "base64"
-      });
+    const originalImageBase64 = fs.readFileSync(originalImagePath, {
+      encoding: "base64",
+    });
 
-    const cleanLiveImage =
-      image1.replace(/^data:image\/\w+;base64,/, "");
+    const cleanLiveImage = image1.replace(/^data:image\/\w+;base64,/, "");
 
     const pythonRes = await axios.post(
       "http://127.0.0.1:5000/face-compare",
       {
         image1: originalImageBase64,
-        image2: cleanLiveImage
+        image2: cleanLiveImage,
+        challenge,
       },
       {
-        timeout: 25000
+        timeout: 25000,
       }
     );
 
-    if (pythonRes.data.result === "success") {
+    console.log("Python Response:", pythonRes.data);
 
-      if (!student.subjectAttendance) {
-        student.subjectAttendance = new Map();
-      }
-
-      const currentAttendance =
-        student.subjectAttendance.get(subjectCode) || 0;
-
-      student.subjectAttendance.set(
-        subjectCode,
-        currentAttendance + 1
-      );
-
-      student.daysPresent =
-        (student.daysPresent || 0) + 1;
-
-      await student.save();
-
-      res.json({
-        success: true,
-        message: `Attendance Marked for ${subjectCode}! ✅`,
-        attendanceCount:
-          student.subjectAttendance.get(subjectCode)
-      });
-
-    } else {
-
-      res.status(400).json({
+    if (pythonRes.data.result !== "success") {
+      return res.status(400).json({
         success: false,
-        message: "Face match nahi hua! ❌"
+        message: pythonRes.data.message || "Face match or challenge failed",
       });
     }
 
-  } catch (err) {
+    if (!student.subjectAttendance) {
+      student.subjectAttendance = new Map();
+    }
 
+    const currentAttendance =
+      student.subjectAttendance.get(subjectCode) || 0;
+
+    student.subjectAttendance.set(subjectCode, currentAttendance + 1);
+    student.daysPresent = Number(student.daysPresent || 0) + 1;
+    student.lastAttendance = new Date();
+    student.lastSubject = subjectCode;
+
+    await Attendance.create({
+      studentId: student._id,
+      collageID: student.collageID,
+      subject: subjectCode,
+      date: today,
+      status: "Present",
+    });
+
+    await student.save();
+
+    res.json({
+      success: true,
+      message: `Attendance marked successfully for ${subjectCode}`,
+      challengePassed: true,
+      attendanceCount: student.subjectAttendance.get(subjectCode),
+    });
+  } catch (err) {
     console.error("Attendance Error Detail:", err.message);
 
     res.status(500).json({
       success: false,
-      message: "Recognition failed or Server Error! ❌",
-      debug: err.message
+      message: "Recognition failed or server error",
+      debug: err.message,
     });
   }
 });
-
 module.exports = router;

@@ -81,21 +81,21 @@
           class="tab-content fade-in"
         >
           <div class="stats-grid">
-            <div class="stat-card blue">
+            <div class="stat-card blue card-1">
               <span>Total Students</span>
-              <h3>{{ students.length }}</h3>
+                <h3>{{ animatedStudents }}</h3>
               <p>Registered students</p>
             </div>
 
-            <div class="stat-card green">
+            <div class="stat-card green card-2">
               <span>Total Teachers</span>
-              <h3>{{ teachers.length }}</h3>
+              <h3>{{ animatedTeachers }}</h3>
               <p>Active faculty members</p>
             </div>
 
-            <div class="stat-card purple">
+            <div class="stat-card purple card-3">
               <span>Total Subjects</span>
-              <h3>{{ subjects.length }}</h3>
+              <h3>{{ animatedSubjects }}</h3>
               <p>Assigned subjects</p>
             </div>
           </div>
@@ -281,12 +281,14 @@
 
             <table class="modern-table">
               <thead>
-                <tr v-if="activeTab === 'students'">
-                  <th>Name</th>
-                  <th>ID</th>
-                  <th>Semester</th>
-                  <th>Action</th>
-                </tr>
+               <tr v-if="activeTab === 'students'">
+  <th>Name</th>
+  <th>ID</th>
+  <th>Semester</th>
+  <th>Total Present</th>
+  <th>Subject Attendance</th>
+  <th>Action</th>
+</tr>
 
                 <tr v-else-if="activeTab === 'teachers'">
                   <th>Teacher Name</th>
@@ -302,27 +304,47 @@
                 </tr>
               </thead>
 
-              <tbody>
-                <tr
-                  v-for="item in filteredData"
-                  :key="item._id || item.teacherID || item.collageID || item.code"
-                >
-                  <template v-if="activeTab === 'students'">
-                    <td>{{ item.name }}</td>
-                    <td>{{ item.collageID }}</td>
-                    <td>{{ item.semester }}</td>
-                  </template>
+             <tbody>
+  <tr
+    v-for="(item, index) in filteredData"
+    :key="item._id || item.teacherID || item.collageID || item.code"
+    class="table-row-animate"
+    :style="{ animationDelay: `${index * 0.06}s` }"
+  >
+  <template v-if="activeTab === 'students'">
+  <td>{{ item.name }}</td>
+  <td>{{ item.collageID }}</td>
+  <td>{{ item.semester }}</td>
 
-                  <template v-else-if="activeTab === 'teachers'">
-                    <td>{{ item.name }}</td>
-                    <td>{{ item.teacherID }}</td>
-                    <td>{{ item.dept || "Engineering" }}</td>
-                  </template>
+  <td>
+    {{ item.daysPresent || 0 }}
+  </td>
 
-                  <template v-else>
-                    <td>{{ item.name }}</td>
-                    <td>{{ item.code }}</td>
-                  </template>
+  <td>
+    <div v-if="item.subjectAttendance">
+      <div
+        v-for="(count, subject) in item.subjectAttendance"
+        :key="subject"
+      >
+        {{ getSubjectName(subject) }} : {{ count }}
+      </div>
+    </div>
+
+    <span v-else>0</span>
+  </td>
+</template>
+  
+
+<template v-else-if="activeTab === 'teachers'">
+  <td>{{ item.name }}</td>
+  <td>{{ item.teacherID }}</td>
+  <td>{{ item.dept || "Engineering" }}</td>
+</template>
+
+<template v-else>
+  <td>{{ item.name }}</td>
+  <td>{{ item.code }}</td>
+</template>
 
                   <td class="action-buttons">
                     <button
@@ -435,12 +457,31 @@ export default {
     }
   },
 
-  methods: {
-    startEditClassTeacher(item) {
-      this.editingClassTeacherId = item._id;
-      this.selectedEditTeacherID = item.teacherID;
-    },
+ methods: {
+  startEditClassTeacher(item) {
+    this.editingClassTeacherId = item._id;
+    this.selectedEditTeacherID = item.teacherID;
+  },
+  getSubjectName(subjectCode) {
+  const subject = this.subjects.find(
+    s => s.code === subjectCode
+  );
 
+  return subject ? subject.name : subjectCode;
+},
+animateCount(target, property) {
+  let start = 0;
+
+  const timer = setInterval(() => {
+    start++;
+
+    this[property] = start;
+
+    if (start >= target) {
+      clearInterval(timer);
+    }
+  }, 20);
+},
     async saveClassTeacher(item) {
       try {
         await axios.put(
@@ -495,6 +536,9 @@ export default {
           [];
 
         await this.fetchClassTeachers();
+        this.animateCount(this.students.length, "animatedStudents");
+this.animateCount(this.teachers.length, "animatedTeachers");
+this.animateCount(this.subjects.length, "animatedSubjects");
 
       } catch (error) {
         console.error("Data load error:", error);
@@ -883,6 +927,9 @@ mounted() {
   border: 1px solid rgba(255,255,255,0.08);
   transition: 0.3s;
 }
+.stat-card:hover{
+  transform:translateY(-8px);
+}
 
 .stat-card:hover {
   transform: translateY(-5px);
@@ -1250,5 +1297,245 @@ mounted() {
 .search-input:focus{
   border-color:#3b82f6;
   box-shadow:0 0 18px rgba(59,130,246,0.3);
+}
+
+.card-1,
+.card-2,
+.card-3{
+  opacity:0;
+  animation:cardEntry 0.7s ease forwards;
+}
+
+.card-1{
+  animation-delay:0.2s;
+}
+
+.card-2{
+  animation-delay:0.4s;
+}
+
+.card-3{
+  animation-delay:0.6s;
+}
+
+@keyframes cardEntry{
+  from{
+    opacity:0;
+    transform:translateY(30px);
+  }
+
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+.nav-item{
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.nav-item:hover{
+  transform: translateX(8px);
+}
+
+.nav-item::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  width:4px;
+  height:100%;
+  background:#3b82f6;
+  transform:scaleY(0);
+  transition:0.3s ease;
+}
+
+.nav-item:hover::before{
+  transform:scaleY(1);
+}
+
+.table-row-animate {
+  opacity: 0;
+  animation: rowSlide 0.45s ease forwards;
+}
+
+@keyframes rowSlide {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.tab-content {
+  animation: tabFadeSlide 0.45s ease;
+}
+
+@keyframes tabFadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nav-item.active {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  transform: translateX(6px);
+
+  box-shadow:
+    inset 4px 0 0 #3b82f6,
+    0 0 18px rgba(59,130,246,0.18);
+}
+
+.nav-item {
+  transition: all 0.3s ease;
+}
+
+.nav-item.active::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3b82f6;
+  transform: translateY(-50%);
+  animation: pulseDot 1.5s infinite;
+}
+
+@keyframes pulseDot {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59,130,246,0.7);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(59,130,246,0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(59,130,246,0);
+  }
+}
+.search-input {
+  transition: all 0.25s ease;
+}
+
+.search-input:focus {
+  transform: scale(1.02);
+  border-color: #3b82f6;
+  box-shadow: 0 0 18px rgba(59, 130, 246, 0.25);
+  outline: none;
+}
+.modern-table tbody tr {
+  transition: all 0.25s ease;
+}
+
+.modern-table tbody tr:hover {
+  transform: scale(1.01);
+  background: rgba(59, 130, 246, 0.08);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12);
+}
+.modern-table tbody tr td {
+  transition: color 0.25s ease;
+}
+
+.modern-table tbody tr:hover td {
+  color: #60a5fa;
+}
+.icon-btn {
+  transition: all 0.25s ease;
+}
+
+.icon-btn:hover {
+  transform: translateY(-3px) scale(1.08);
+}
+.icon-btn.edit:hover {
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.35);
+}
+.icon-btn.del:hover {
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.35);
+}
+.icon-btn.save:hover {
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.35);
+}
+.icon-btn:active {
+  transform: scale(0.92);
+}
+.add-btn-primary {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+
+.add-btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.35);
+}
+
+.add-btn-primary::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -90%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255,255,255,0.45),
+    transparent
+  );
+  transform: skewX(-25deg);
+}
+
+.add-btn-primary:hover::before {
+  animation: adminBtnShine 0.8s ease;
+}
+
+@keyframes adminBtnShine {
+  from {
+    left: -90%;
+  }
+  to {
+    left: 130%;
+  }
+}
+.glass-panel {
+  transition: all 0.3s ease;
+}
+
+.glass-panel:hover {
+  transform: translateY(-6px);
+
+  box-shadow:
+    0 20px 40px rgba(0,0,0,0.25),
+    0 0 25px rgba(59,130,246,0.12);
+}
+.empty-text {
+  animation: softPulse 2s ease-in-out infinite;
+}
+
+@keyframes softPulse {
+  0%, 100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
 }
 </style>

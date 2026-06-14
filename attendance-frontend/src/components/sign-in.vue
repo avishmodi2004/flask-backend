@@ -1,21 +1,25 @@
 <template>
-  <div class="wrapper">
-    <!-- Login Form Container -->
-    <form class="login-form" @submit.prevent="signIn">
-      <h1 class="academy">IPS Academy</h1>
-      <h2 class="school-text">School of Computer</h2>
+  <div class="wrapper page-enter">
+ 
+   <form
+  class="login-form"
+  @submit.prevent="signIn"
+  @mousemove="cardTilt"
+  @mouseleave="resetTilt"
+  ref="loginCard"
+>
+      <h1 class="academy float-title">IPS Academy</h1>
+      <h2 class="school-text float-subtitle">School of Computer</h2>
 
       <div class="input-container">
-        <!-- ID Input -->
         <input
           v-model="credentials.id"
           :placeholder="getPlaceholder"
           required
-          class="modern-input"
+          class="modern-input item-1"
         />
 
-        <!-- Password Input -->
-        <div class="password-box">
+        <div class="password-box item-2">
           <input
             :type="showPassword ? 'text' : 'password'"
             v-model="credentials.password"
@@ -28,20 +32,18 @@
           </span>
         </div>
 
-        <!-- Role Selection -->
-        <select v-model="selectedRole" class="modern-select">
+        <select v-model="selectedRole" class="modern-select item-3">
           <option value="student">Student</option>
-          <option value="teacher">Teacher</option> <!-- 🔥 Naya Role Add Kiya -->
+          <option value="teacher">Teacher</option>
           <option value="admin">Admin</option>
         </select>
 
-        <!-- Submit Button -->
-        <button type="submit" :disabled="loading" class="sign-in-btn">
+        <button type="submit" :disabled="loading" class="sign-in-btn item-4">
           {{ loading ? "Signing in..." : "Sign in" }}
         </button>
       </div>
 
-      <p class="contact-text">No account? Contact Admin</p>
+      <p class="contact-text item-5">No account? Contact Admin</p>
     </form>
   </div>
 </template>
@@ -61,47 +63,47 @@ export default {
       },
     };
   },
+
   computed: {
-    // Dynamic placeholder text
     getPlaceholder() {
-      if (this.selectedRole === 'admin') return 'Admin ID';
-      if (this.selectedRole === 'teacher') return 'Teacher ID';
-      return 'College ID';
-    }
+      if (this.selectedRole === "admin") return "Admin ID";
+      if (this.selectedRole === "teacher") return "Teacher ID";
+      return "College ID";
+    },
   },
+
   methods: {
     async signIn() {
       this.loading = true;
+
       try {
         let res;
         const apiBase = "http://localhost:4000/api";
-        
-        // 1. Student Login
+
         if (this.selectedRole === "student") {
           res = await axios.post(`${apiBase}/student/signin`, {
             collageID: this.credentials.id,
             password: this.credentials.password,
           });
+
           localStorage.setItem("student", JSON.stringify(res.data.student));
           alert("Student Login Success ✅");
           this.$router.push("/dashboard");
-        } 
-        // 2. Teacher Login Logic 🔥
-        else if (this.selectedRole === "teacher") {
+        } else if (this.selectedRole === "teacher") {
           res = await axios.post(`${apiBase}/teacher/signin`, {
             teacherID: this.credentials.id,
             password: this.credentials.password,
           });
+
           localStorage.setItem("teacher", JSON.stringify(res.data.teacher));
           alert("Teacher Login Success ✅");
-          this.$router.push("/teacher-dashboard"); // Teacher ke dashboard ka route
-        }
-        // 3. Admin Login
-        else {
+          this.$router.push("/teacher-dashboard");
+        } else {
           res = await axios.post(`${apiBase}/admin/signin`, {
             adminID: this.credentials.id,
             password: this.credentials.password,
           });
+
           localStorage.setItem("admin", JSON.stringify(res.data.admin));
           alert("Admin Login Success ✅");
           this.$router.push("/admin");
@@ -112,6 +114,31 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+
+    cardTilt(e) {
+      const card = this.$refs.loginCard;
+      if (!card) return;
+
+      const rect = card.getBoundingClientRect();
+
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      const rotateX = ((y - centerY) / centerY) * -4;
+      const rotateY = ((x - centerX) / centerX) * 4;
+
+      card.style.transform = `perspective(900px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    },
+
+    resetTilt() {
+      const card = this.$refs.loginCard;
+      if (!card) return;
+
+      card.style.transform = "perspective(900px) rotateX(0deg) rotateY(0deg)";
     },
   },
 };
@@ -542,5 +569,174 @@ export default {
 
 .sign-in-btn:hover{
   transform:translateY(-3px) scale(1.02);
+}
+
+
+.page-enter {
+  animation: pageFade 0.8s ease;
+}
+
+@keyframes pageFade {
+  from {
+    opacity: 0;
+    transform: translateY(25px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.float-title {
+  animation: floating 3s ease-in-out infinite;
+}
+
+.float-subtitle {
+  animation: floating 3s ease-in-out infinite;
+  animation-delay: 0.4s;
+}
+
+@keyframes floating {
+  0%,100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+
+.sign-in-btn {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.sign-in-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 22px rgba(59, 130, 246, 0.75);
+}
+
+.sign-in-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -90%;
+  width: 55%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+  transform: skewX(-25deg);
+}
+
+.sign-in-btn:hover::before {
+  animation: shineMove 0.8s ease;
+}
+
+@keyframes shineMove {
+  from {
+    left: -90%;
+  }
+  to {
+    left: 130%;
+  }
+}
+
+
+.modern-input,
+.modern-select {
+  transition: all 0.25s ease;
+}
+
+.modern-input:focus,
+.modern-select:focus {
+  transform: scale(1.03);
+  box-shadow: 0 0 18px rgba(59, 130, 246, 0.65);
+  border-color: #3b82f6;
+  outline: none;
+}
+
+.login-form {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.login-form:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+}
+
+.item-1,
+.item-2,
+.item-3,
+.item-4,
+.item-5 {
+  opacity: 0;
+  animation: slideUp 0.6s ease forwards;
+}
+
+.item-1 { animation-delay: 0.2s; }
+.item-2 { animation-delay: 0.4s; }
+.item-3 { animation-delay: 0.6s; }
+.item-4 { animation-delay: 0.8s; }
+.item-5 { animation-delay: 1s; }
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(25px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-form {
+  transition: all 0.3s ease;
+}
+
+.login-form:hover {
+  transform: translateY(-4px);
+
+  box-shadow:
+    0 25px 50px rgba(0,0,0,0.45),
+    0 0 25px rgba(59,130,246,0.15);
+}
+
+.academy{
+  letter-spacing: 1px;
+}
+
+.academy:hover{
+  transform: scale(1.03);
+  transition: 0.3s;
+}
+
+.login-form {
+  transform-style: preserve-3d;
+  transition: transform 0.15s ease, box-shadow 0.3s ease;
+}
+
+.academy::after {
+  content: "|";
+  margin-left: 4px;
+  animation: blinkCursor 1s infinite;
+}
+
+@keyframes blinkCursor {
+  0%, 50% {
+    opacity: 1;
+  }
+
+  51%, 100% {
+    opacity: 0;
+  }
 }
 </style>

@@ -9,23 +9,38 @@
         ({{ teacher.teacherID }})
       </p>
 
+
+<select
+  v-model="selectedSemester"
+  :disabled="isClassRunning"
+  @change="fetchSubjectsBySemester"
+>
+  <option value="" disabled>Select Semester</option>
+
+  <option
+    v-for="sem in semesters"
+    :key="sem"
+    :value="sem"
+  >
+    Semester {{ sem }}
+  </option>
+</select>
+
       <!-- SUBJECT SELECT -->
       <select
-        v-model="selectedSubject"
-        :disabled="isClassRunning"
-      >
-        <option value="" disabled>
-          Select Subject
-        </option>
+  v-model="selectedSubject"
+  :disabled="isClassRunning || !selectedSemester"
+>
+  <option value="" disabled>Select Subject</option>
 
-        <option
-          v-for="sub in subjects"
-          :key="sub._id"
-          :value="sub.code"
-        >
-          {{ sub.name }} - Semester {{ sub.semester }}
-        </option>
-      </select>
+  <option
+    v-for="sub in subjects"
+    :key="sub._id"
+    :value="sub.code"
+  >
+    {{ sub.name }} - {{ sub.code }}
+  </option>
+</select>
 
       <!-- START / STOP -->
       <button
@@ -161,9 +176,12 @@ import axios from "axios";
 
 export default {
   data() {
+    
     return {
-
+    
       teacher: {},
+      selectedSemester: "",
+semesters: [1, 2, 3, 4, 5, 6, 7, 8],
 
       subjects: [],
 
@@ -252,18 +270,22 @@ async removeAttendance(collageID) {
 },
 
     // FETCH SUBJECTS
-    async fetchSubjects() {
+    async fetchSubjectsBySemester() {
+  if (!this.selectedSemester) return;
 
-      const res = await axios.get(
-        `${this.apiBase}/subjects/teacher/${this.teacher.teacherID}`
-      );
+  try {
+    const res = await axios.get(
+      `${this.apiBase}/subjects/semester/${this.selectedSemester}`
+    );
 
-      this.subjects = res.data;
-
-      if (this.subjects.length > 0) {
-        this.selectedSubject = this.subjects[0].code;
-      }
-    },
+    this.subjects = res.data;
+    this.selectedSubject = "";
+  } catch (err) {
+    console.error("Subjects load failed:", err);
+    this.subjects = [];
+    this.selectedSubject = "";
+  }
+},
 
     // CHECK CLASS STATUS
     async checkClassStatus() {
@@ -540,7 +562,7 @@ async removeAttendance(collageID) {
       JSON.parse(stored);
 
     await this.checkClassTeacher();
-await this.fetchSubjects();
+
 await this.checkClassStatus();
   },
 
@@ -860,4 +882,43 @@ rgba(0,0,0,0.7)
 ),
 url("/src/assets/login-bg.jpeg");
 
+.logout-btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+  transform: translateX(-5px);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.25);
+}
+
+.logout-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255,255,255,0.35),
+    transparent
+  );
+  transform: skewX(-25deg);
+}
+
+.logout-btn:hover::before {
+  animation: logoutShine 0.8s ease;
+}
+
+@keyframes logoutShine {
+  from {
+    left: -100%;
+  }
+  to {
+    left: 140%;
+  }
+}
 </style>

@@ -13,16 +13,19 @@
           <div v-if="!isClassStarted" class="locked-overlay">
             <p>🔒 Class Not Started</p>
           </div>
+
           <FaceAttendance v-else @sendBlob="handleBlob" />
         </div>
 
-        <div v-if="isClassStarted" class="live-tag">
-          🔴 Live: {{ activeSubjectCode }}
+      
+
+        <div v-if="challengeText" class="challenge-info">
+          Challenge: {{ challengeText }}
         </div>
 
-        <button 
-          class="sign-in-btn" 
-          :disabled="loading || !isClassStarted"
+        <button
+          class="sign-in-btn"
+          :disabled="loading || !isClassStarted || !imageCaptured"
           @click="handleAttendanceClick"
         >
           {{ loading ? "Comparing Face..." : "Submit Attendance" }}
@@ -40,19 +43,24 @@ import axios from "axios";
 
 export default {
   components: { FaceAttendance },
+
   data() {
     return {
       student: {},
-      isClassStarted: false, 
+      isClassStarted: false,
       activeSubjectCode: "",
+
       imageCaptured: false,
       imageBlob: null,
+      challengeText: "",
+
       loading: false,
-      statusTimer: null 
+      statusTimer: null,
     };
   },
-  methods: {
-   async checkClassStatus() {
+
+ methods: {
+  async checkClassStatus() {
   try {
     const res = await axios.get("http://localhost:4000/api/class/all-active");
 
@@ -65,72 +73,127 @@ export default {
     } else {
       this.isClassStarted = false;
       this.activeSubjectCode = "";
+      this.imageCaptured = false;
+      this.imageBlob = null;
+      this.challengeText = "";
     }
   } catch (err) {
     console.error("Server Status check failed!", err);
     this.isClassStarted = false;
   }
 },
-    handleBlob(blob) {
-      this.imageBlob = blob;
-      this.imageCaptured = true;
-    },
-    async handleAttendanceClick() {
-      if (!this.imageCaptured || !this.imageBlob) {
-        alert("Pehle camera ke samne aao! 📸");
-        return;
-      }
-      
-      this.loading = true;
-      const reader = new FileReader();
-      reader.readAsDataURL(this.imageBlob);
-      
-      reader.onloadend = async () => {
-        try {
-          // Backend ko collageID, live photo aur subject code bhej rahe hain
-          const response = await axios.post("http://localhost:4000/api/student/mark-attendance", {
-            collageID: this.student.collageID,
-            image1: reader.result,
-            subjectCode: this.activeSubjectCode 
-          });
 
-          if (response.data.success) {
-            alert(`Attendance Marked for ${this.activeSubjectCode}! ✅`);
-          } else {
-            alert("Face Match Failed! Firse koshish karein. ❌");
-          }
-        } catch (err) {
-          alert(err.response?.data?.message || "Server Error: Recognition Failed ❌");
-        } finally {
-          this.loading = false;
-          this.imageCaptured = false;
+  async handleBlob(data) {
+    this.imageBlob = data.blob;
+    this.challengeText = data.challenge;
+    this.imageCaptured = false;
+
+    const imageBase64 = await this.blobToBase64(this.imageBlob);
+
+    try {
+      const res = await axios.post(
+        "http://localhost:4000/api/student/verify-challenge",
+        {
+          image1: imageBase64,
+          challenge: this.challengeText,
         }
-      };
-    },
-    logout() {
-      if (this.statusTimer) clearInterval(this.statusTimer);
-      localStorage.removeItem("student");
-      this.$router.push("/");
+      );
+
+      if (res.data.success) {
+        this.imageCaptured = true;
+        alert(`Challenge passed ✅\nNow submit attendance`);
+      } else {
+        this.imageBlob = null;
+        this.imageCaptured = false;
+        alert(res.data.message || "Challenge failed ❌");
+      }
+    } catch (err) {
+      this.imageBlob = null;
+      this.imageCaptured = false;
+      alert(err.response?.data?.message || "Challenge failed ❌");
     }
   },
+
+  blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onloadend = () => {
+        resolve(reader.result);
+      };
+
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  },
+  async handleAttendanceClick() {
+  if (!this.imageBlob || !this.challengeText) {
+    alert("Please capture and pass the challenge first");
+    return;
+  }
+
+  if (!this.activeSubjectCode) {
+    alert("Subject code is missing");
+    return;
+  }
+
+  this.loading = true;
+
+  try {
+    const imageBase64 = await this.blobToBase64(this.imageBlob);
+
+    const res = await axios.post(
+      "http://localhost:4000/api/student/mark-attendance",
+      {
+        collageID: this.student.collageID,
+        image1: imageBase64,
+        subjectCode: this.activeSubjectCode,
+        challenge: this.challengeText,
+      }
+    );
+
+    if (res.data.success) {
+      alert(res.data.message || "Attendance marked successfully");
+
+      this.imageCaptured = false;
+      this.imageBlob = null;
+      this.challengeText = "";
+
+      window.location.reload();
+    } else {
+      alert(res.data.message || "Attendance failed");
+    }
+  } catch (err) {
+    alert(err.response?.data?.message || "Attendance failed");
+  } finally {
+    this.loading = false;
+  }
+},
+
+  logout() {
+    if (this.statusTimer) clearInterval(this.statusTimer);
+    localStorage.removeItem("student");
+    this.$router.push("/");
+  }
+},
+
   mounted() {
     const stored = localStorage.getItem("student");
+
     if (stored) {
       this.student = JSON.parse(stored);
-      // Pehla check turant karo
       this.checkClassStatus();
-      // Har 3 second mein refresh hota rahega
       this.statusTimer = setInterval(this.checkClassStatus, 3000);
     } else {
       this.$router.push("/");
     }
   },
+
   beforeUnmount() {
     if (this.statusTimer) clearInterval(this.statusTimer);
-  }
+  },
 };
 </script>
-
 <style scoped>
 
 .dashboard-wrapper{

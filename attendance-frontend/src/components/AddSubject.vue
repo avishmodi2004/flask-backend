@@ -39,7 +39,7 @@
           <select
             v-model="subject.semester"
             class="teacher-select"
-            :disabled="isEdit"
+           
           >
 
             <option value="" disabled>
@@ -59,30 +59,7 @@
         </div>
 
         <!-- TEACHER -->
-        <div class="input-field">
-
-          <select
-            v-model="subject.teacherID"
-            class="teacher-select"
-            :disabled="isEdit"
-          >
-
-            <option value="" disabled>
-              Assign Teacher
-            </option>
-
-           <option
-  v-for="t in teachers"
-  :key="t._id"
-  :value="t.teacherID || t.employeeID || t._id"
->
-  {{ t.name }} -
-  {{ t.teacherID || t.employeeID }}
-</option>
-
-          </select>
-
-        </div>
+       
 
         <!-- BUTTON -->
         <button
@@ -185,7 +162,7 @@ async fetchTeachers() {
             "Subject Updated Successfully ✅"
           );
 
-          this.$router.push("/admin");
+        this.$router.push("/admin?tab=subjects");
 
           return;
         }
@@ -193,11 +170,10 @@ async fetchTeachers() {
         // ================= ADD =================
 
         if (
-          !this.subject.name ||
-          !this.subject.code ||
-          !this.subject.teacherID ||
-          !this.subject.semester
-        ) {
+  !this.subject.name ||
+  !this.subject.code ||
+  !this.subject.semester
+) {
 
           alert(
             "Please fill all details!"
@@ -215,7 +191,7 @@ async fetchTeachers() {
           "Subject Created Successfully! ✅"
         );
 
-        this.$router.push("/admin");
+        this.$router.push("/admin?tab=subjects");
 
       } catch (err) {
 

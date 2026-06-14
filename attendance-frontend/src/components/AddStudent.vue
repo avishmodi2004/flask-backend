@@ -150,6 +150,9 @@ export default {
   data() {
 
     return {
+      animatedStudents: 0,
+animatedTeachers: 0,
+animatedSubjects: 0,
 
       student: {
         name: "",

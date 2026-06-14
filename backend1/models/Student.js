@@ -37,6 +37,15 @@ const StudentSchema = new mongoose.Schema({
     default: {}
   },
 
+  lastAttendance: {
+  type: Date,
+  default: null,
+},
+
+lastSubject: {
+  type: String,
+  default: "",
+},
   // Image path for Face Recognition
   image: {
     type: String,
@@ -47,5 +56,6 @@ const StudentSchema = new mongoose.Schema({
     type: Date,
   },
 });
+
 
 module.exports = mongoose.model("Student", StudentSchema);
